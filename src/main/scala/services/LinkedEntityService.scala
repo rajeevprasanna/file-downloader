@@ -19,7 +19,7 @@ trait LinkedEntityService  extends SfServices with ActorUtils with AttachmentSer
 
   def linkedEntityStreamProcessor(tokens:SalesforceTokens)(entities:List[Either[List[SFDCError], (SFOpportunityInfo, ContentDocumentVersion)]]):Future[Either[List[SFDCError], List[AttachmentWithStageInfo]]] = {
     val source:Source[Either[List[SFDCError], Option[AttachmentWithStageInfo]], NotUsed] = Source(entities)
-      .mapAsyncUnordered(1){
+      .mapAsyncUnordered(2){
         case entityInfoEither =>
           val p = Promise[Either[List[SFDCError], Option[AttachmentWithStageInfo]]]
           entityInfoEither match {

@@ -23,7 +23,7 @@ trait AttachmentService extends SfServices with ActorUtils {
 
   def attachmentStreamProcessor(tokens:SalesforceTokens)(attachments:List[Either[List[SFDCError], (SFOpportunityInfo, SFAttachmentInfo)]]):Future[Either[List[SFDCError], List[AttachmentWithStageInfo]]] = {
       val source:Source[Either[List[SFDCError], Option[AttachmentWithStageInfo]], NotUsed] = Source(attachments)
-        .mapAsyncUnordered(1){
+        .mapAsyncUnordered(2){
           case attachmentInfoEither =>
                   val p = Promise[Either[List[SFDCError], Option[AttachmentWithStageInfo]]]
                   attachmentInfoEither match {

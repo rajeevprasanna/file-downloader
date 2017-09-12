@@ -22,7 +22,7 @@ import scala.concurrent.Future
 trait SFDCAnalytics extends SfUtils with SfServices with AttachmentService with LinkedEntityService {
 
   def extractAnalytics:List[Either[List[SFDCError], SalesforceUserProfile]] => Future[Either[List[SFDCError], (SalesforceTokens, List[AttachmentWithStageInfo])]] = (userProfiles:List[Either[List[SFDCError], SalesforceUserProfile]]) => {
-    val res:Future[Either[List[SFDCError], (SalesforceTokens, List[AttachmentWithStageInfo])]] = Source(userProfiles).mapAsync(1)(refreshSFTokens).mapAsync(1)(querySFAnalytics).runWith(Sink.head)
+    val res:Future[Either[List[SFDCError], (SalesforceTokens, List[AttachmentWithStageInfo])]] = Source(userProfiles).mapAsync(3)(refreshSFTokens).mapAsync(1)(querySFAnalytics).runWith(Sink.head)
     res
   }
 
@@ -38,19 +38,19 @@ trait SFDCAnalytics extends SfUtils with SfServices with AttachmentService with 
     val opportunityInfoSource:Source[Either[List[SFDCError], SFOpportunityInfo], NotUsed] = Source.fromFuture(getUserOpportunities(tokens))
 
     val attachmentRetrievalFlow:Flow[Either[List[SFDCError], SFOpportunityInfo], Either[List[SFDCError], (SFOpportunityInfo, SFAttachmentInfoResp)], NotUsed] =
-      Flow[Either[List[SFDCError], SFOpportunityInfo]].mapAsync(1)(getAttachmentsInfo(tokens))
+      Flow[Either[List[SFDCError], SFOpportunityInfo]].mapAsync(3)(getAttachmentsInfo(tokens))
 
     val attachmentStageInfoFetcher:Flow[Either[List[SFDCError], (SFOpportunityInfo, SFAttachmentInfoResp)], Either[List[SFDCError], List[AttachmentWithStageInfo]], _] = Flow[Either[List[SFDCError], (SFOpportunityInfo, SFAttachmentInfoResp)]]
-      .map(reArrangeAttachmentModels).mapAsync(1)(attachmentStreamProcessor(tokens))
+      .map(reArrangeAttachmentModels).mapAsync(2)(attachmentStreamProcessor(tokens))
 
     val linkedEntityIds:Flow[Either[List[SFDCError], SFOpportunityInfo], Either[List[SFDCError], (SFOpportunityInfo, ContentDocumentVersionResp)], _] =
-      Flow[Either[List[SFDCError], SFOpportunityInfo]].mapAsync(1)(getLinkedEntities(tokens))
+      Flow[Either[List[SFDCError], SFOpportunityInfo]].mapAsync(3)(getLinkedEntities(tokens))
 
     val distributedEntityIds:Flow[Either[List[SFDCError], SFOpportunityInfo], Either[List[SFDCError], (SFOpportunityInfo, ContentDocumentVersionResp)], _] =
-      Flow[Either[List[SFDCError], SFOpportunityInfo]].mapAsync(1)(getDistributedEntities(tokens))
+      Flow[Either[List[SFDCError], SFOpportunityInfo]].mapAsync(3)(getDistributedEntities(tokens))
 
     val entityStageInfoFetcher:Flow[Either[List[SFDCError], (SFOpportunityInfo, ContentDocumentVersionResp)], Either[List[SFDCError], List[AttachmentWithStageInfo]], _] = Flow[Either[List[SFDCError], (SFOpportunityInfo, ContentDocumentVersionResp)]]
-      .map(reArrangeEntityModels).mapAsync(1)(linkedEntityStreamProcessor(tokens))
+      .map(reArrangeEntityModels).mapAsync(3)(linkedEntityStreamProcessor(tokens))
 
     val out = Sink.fold[Either[List[SFDCError], List[AttachmentWithStageInfo]], Either[List[SFDCError], List[AttachmentWithStageInfo]]](attachmentStageInfoMonoid.empty)(attachmentStageInfoMonoid.combine)
 
