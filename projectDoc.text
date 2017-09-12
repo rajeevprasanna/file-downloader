@@ -1,0 +1,10 @@
+
+
+Steps for implementation :
+1) Fetch all Salesforce user details from testDomain server -- done
+2) Filter users having invalid oauth tokens(tokens which are already marked as invalid in previous iteration)
+3) Iterate over each user, get opportunity details
+    i) ensure tokens are valid and renew the tokens if they get invalid in the middle of the flow
+
+4) for each closed opportunity get the file details from three sources
+5) update analytics to myTestDomain server(for testing write to local database)
